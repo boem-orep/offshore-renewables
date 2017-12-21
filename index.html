@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+
+  <title>Atlantic Offshore Wind</title>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css?family=Noto+Sans" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Lora" rel="stylesheet">
+
+  <!-- reference to mapbox assembly library -->
+  <link href="https://api.mapbox.com/mapbox-assembly/v0.19.0/assembly.min.css" rel="stylesheet">
+
+  <!-- <link href='css/styles.css' rel='stylesheet' /> -->
+  <style>
+    /*rules for info panel*/
+    .info {
+      padding: 6px 8px;
+      font-size: 1em;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      text-align: left;
+    }
+
+    .info h3 {
+      margin: 0;
+    }
+
+    .grid {
+      background-color: whitesmoke;
+    }
+
+    /*rules for turbine svg in left panel*/
+    #turbine {
+          position: absolute;
+          bottom: 150px;
+          left: -45px;
+          width: 375px;
+          height: 375px;
+          margin: 20px auto;
+          padding: 0 15px;
+          opacity: .1;
+          fill-opacity: 0;
+      }
+
+    /*rules for legend*/
+    #side-panel {
+         position: absolute;
+         bottom: 0;
+         right: 0;
+         width: 280px;
+         margin: 20px auto;
+         padding: 15px;
+         background: rgba(256, 256, 256, .8);
+         border: 1px solid grey;
+         border-radius: 3px;
+         z-index: 800;
+     }
+
+     p {
+         font-size: .9em;
+         line-height: 1.5em;
+     }
+
+     a {
+         color: #005daa;
+         text-decoration: none;
+     }
+
+     a:hover {
+         text-decoration: underline;
+     }
+     #legend {
+         position: relative;
+         margin: 20px 0;
+     }
+     #legend-large, #legend-small {
+         border: 2px solid grey;
+         border-radius: 50%;
+         background: #b30059;
+         position: absolute;
+     }
+     #legend-large-label, #legend-small-label {
+         position: absolute;
+     }
+     #legend hr.small, #legend hr.large {
+         width: 83px;
+         position: absolute;
+         top: -8px;
+         left: 66px;
+     }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- info grid display on left of screen -->
+  <div class='grid'>
+    <div class='col col--12 col--3-ml px6 py6 viewport-third viewport-full-ml'>
+      <div class='h-full scroll-auto'>
+        <h1 class='txt-h3 mb8 color-blue-dark'>Atlantic Offshore Wind - Current Projects</h1>
+        <p>The Bureau of Ocean Energy Management (BOEM) is responsible for overseeing offshore renewable energy development in Federal waters. To date 13 Federal leases have been issued on the Atlantic Outer Continental Shelf and several more pre-lease planning
+          areas have been delineated. <br><br>The lease areas are depicted on this map in black under the proportional symbols. The leaseholder (lessee) of each area is indicated in an infopanel on mouse hover. The lessee holds rights to develop the area pending
+          approval of a construction and operations plan. No lease areas in Federal waters currently have development, all are in a pre-construction phase.</p>
+        <h2 class='txt-h3 mt18 mb8 color-blue-dark'>Capacity Estimate</h2>
+        <p>Array power density is a measure of output in megawatts (MW) of offshore wind installations. The proportional symbols on this map use a capacity array power density calculation of 3 MW per square kilometer (MW/km2) based on likely array spacing
+          of U.S. projects.</p>
+        <footer class='absolute bottom mt12 pb6 bg-gray-faint txt-s'>
+          <ul>
+            <!-- <li>Read the NREL <a class='link txt-underline-on-hover' href="https://www.nrel.gov/docs/fy16osti/66599.pdf" target="_blank">report</a> describing array power density.</li> -->
+            <li>Download BOEM <a class='link txt-underline-on-hover' href="https://www.boem.gov/Renewable-Energy-GIS-Data/" target="_blank">leases and planning areas</a>.</li>
+            <li>Read the DOI/DOE <a class='link txt-underline-on-hover' href="https://energy.gov/sites/prod/files/2016/09/f33/National-Offshore-Wind-Strategy-report-09082016.pdf" target="_blank">Offshore Wind Strategy</a>.</li>
+            <li>Map authored by <a class='link txt-underline-on-hover' href="https://josh-wadlington.github.io/" target="_blank">Josh Wadlington</a></li>
+            <li><b>Map date: 12/14/2017</b><li>
+        </footer>
+      </div>
+    </div>
+
+    <!-- map display -->
+    <div class='col col--12 col--9-ml h180 h-full-ml'>
+      <div id="map" class='viewport-twothirds viewport-full-ml'></div>
+
+    <section id="side-panel">
+        <p>This proportional symbol map shows gross capacity array power density estimates for offshore wind projects on the Atlantic Outer Continental Shelf.</p>
+        <h3><b>Megawatts</b></h3>
+        <div id='legend'>
+            <div id="legend-large"></div>
+            <div id="legend-small"></div>
+            <div id="legend-large-label"></div>
+            <div id="legend-small-label"></div>
+        </div>
+        <p>Read the <i>2016 Offshore Wind Energy Resource Assessment for the United States</i> that describes capacity array power density, available from <a href="https://www.nrel.gov/docs/fy16osti/66599.pdf">NREL</a>.</p>
+    </section>
+
+    <section id="turbine">
+        <img src="graphics/Wind_Turbine.svg">
+    </section>
+
+      <!-- load jquery and leaflet libraries -->
+      <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+      <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+
+      <!-- load assembly, mapbox and omnivore libraries -->
+      <script async defer src="https://api.mapbox.com/mapbox-assembly/v0.19.0/assembly.js"></script>
+      <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
+
+      <script>
+        //initialize map
+        var map = L.map('map', {
+          center: [37.1, -72.1],
+          zoom: 6.2,
+          minZoom: 4
+        });
+
+        // load basemaps
+        var basemaps = {
+          //bathy - shows continental shelf break
+          Bathymetry: L.tileLayer.wms('https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?', {
+            layers: 'GEBCO_LATEST',
+            attribution: '&copy; <a href="https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/">GEBCO</a>'
+          }),
+          //osm - shows maritime boundaries
+          'Marine Boundaries': L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          }),
+          //NOAA charts
+          'Nautical Charts': L.tileLayer('//tileservice.charts.noaa.gov/tiles/50000_1/{z}/{x}/{y}.png', {
+          }),
+        };
+
+        // add CARTO voyager tiles to display under NOAA Nautical Charts
+        L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy;<a href="https://carto.com/attribution">CARTO</a> &copy; <a href="https://tileservice.charts.noaa.gov/">NOAA</a>'
+        }).addTo(map);
+
+        //add control to switch basemaps
+        L.control.layers(basemaps).addTo(map);
+        //add bathymetry as default basemap
+        basemaps.Bathymetry.addTo(map);
+
+        //add scale control:
+        L.control.scale().addTo(map);
+
+        // load all data asynchronously first
+        $.when(
+          $.getJSON('data/BOEM_Areas.geojson'),
+          $.getJSON('data/Centroids_Acres_MW.json')
+        ).done(function(boemAreas, centroidsData) {
+
+          // console.log(centroidsData);
+
+          centroidsData = centroidsData[0].features.sort(function (a, b) {
+                return b.properties.MW - a.properties.MW
+            });
+
+          // access to all data here. Call drawMap() function once
+          drawMap(boemAreas[0], centroidsData);
+
+        });
+
+        function drawMap(boemAreas, centroidsData) {
+
+          // create Leaflet data layer and add to map
+          var dataLayer = L.geoJson(boemAreas, {
+            style: function(feature) {
+              // style lease areas with initial default path options
+              return {
+                color: 'black',
+                weight: .5,
+                fillOpacity: .5
+              };
+            }
+          }).addTo(map);
+
+          //get info panel data from updateInfo function
+          dataLayer.eachLayer(function(layer) {
+            layer.on('mouseover', function() {
+              updateInfo(this);
+            });
+          });
+
+          //highlight feature on mouseover
+          dataLayer.eachLayer(function(layer) {
+            layer.on('mouseover', function() {
+              layer.setStyle({
+                color: 'yellow',
+                opacity: 1,
+                weight: 2
+              }).bringToFront();
+            });
+          });
+          //return feature to default style after mouseout
+          dataLayer.eachLayer(function(layer) {
+            layer.on('mouseout', function() {
+              layer.setStyle({
+                color: 'black',
+                weight: .8,
+              });
+            });
+          });
+
+          //draw info panel only when user hovers over county
+          dataLayer.on('mouseover', function() {
+            $(".info").show();
+          });
+          dataLayer.on('mouseout', function() {
+            $(".info").hide();
+          });
+
+          //add proportional symbols to map
+          var symbolLayer = L.geoJson(centroidsData, {
+            pointToLayer: function(feature, latlng) {
+              return L.circleMarker(latlng, {
+                color: '#33001a',
+                fillColor: '#b30059',
+                weight: 1,
+                stroke: 1,
+                fillOpacity: .3,
+                radius: getRadius(feature.properties.MW)
+              });
+            },
+          }).addTo(map);
+
+          symbolLayer.eachLayer(function(layer) {
+            // shortcut reference for layer properties
+            var props2 = layer.feature.properties;
+
+            // assemble string sequence of info for tooltip
+            var tooltipInfo2 = "<b>Megawatts: " + props2["MW"]
+            // bind a tooltip to layer
+            layer.bindTooltip(tooltipInfo2, {
+              sticky: true
+            });
+          });
+
+          drawInfo();
+          drawLegend(centroidsData);
+
+        }
+
+        //function to get prop symbol size
+        function getRadius(val) {
+          var radius = Math.sqrt(val / Math.PI);
+          return radius * 1.8;
+        }
+
+        //begin function to draw info panel
+        function drawInfo() {
+          //variable to indicate position of panel
+          var info = L.control({
+            position: 'topright'
+          });
+          info.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'info');
+            return div;
+          }
+          //add info to map
+          info.addTo(map);
+          //hide when no mouseover
+          $(".info").hide();
+        }
+
+        //begin function to define info layer panel attributes and values
+        function updateInfo(layer) {
+          //variable to get feature values
+          var props = layer.feature.properties;
+
+          //descriptions of values to be displayed in panel on map
+          var html = "<h1><b>" + props['Type'] + ":</b></h1>" + props["Name"] + "</b>"
+          //add values to map
+          $(".info").html(html);
+
+        }
+
+        function drawLegend(centroidsData) {
+
+          var largeDiameter = getRadius(centroidsData[0].properties.MW) * 2,
+              smallDiameter = largeDiameter/2;
+
+          $("#legend").css('height', largeDiameter.toFixed());
+
+          $('#legend-large').css({
+              'width': largeDiameter.toFixed(),
+              'height': largeDiameter.toFixed()
+          })
+
+          //exact size of large label
+          // $("#legend-large-label").html(centroidsData[0].properties.MW.toLocaleString());
+
+          //round label to a cleaner number
+          $("#legend-large-label").html('7,600');
+
+          $("#legend-large-label").css({
+              'left': largeDiameter + 30,
+              'top' : -8
+          });
+
+          $('#legend-small').css({
+              'width': smallDiameter.toFixed(),
+              'height': smallDiameter.toFixed(),
+              'top': largeDiameter - smallDiameter,
+              'left': smallDiameter/2
+          })
+
+          //exact size of large label
+          // $("#legend-small-label").html((centroidsData[0].properties.MW/2).toLocaleString());
+
+          //round label to a cleaner number
+          $("#legend-small-label").html('3,810');
+
+          $("#legend-small-label").css({
+              'top': smallDiameter - 8,
+              'left': largeDiameter + 30
+          });
+
+          $("<hr class='large'>").insertBefore("#legend-large-label")
+          $("<hr class='small'>").insertBefore("#legend-small-label").css('top', largeDiameter - smallDiameter - 8);
+
+        }
+
+      </script>
+
+</body>
+
+</html>
